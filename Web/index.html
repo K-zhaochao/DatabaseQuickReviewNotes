@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>数据库知识速查</title>
+  <style>
+    /* ========== Reset & Base ========== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; overflow-y: auto; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+      background: #f5f6fa; color: #2d3436; line-height: 1.7;
+    }
+
+    /* ========== Sidebar Navigation ========== */
+    .sidebar {
+      position: fixed; top: 0; left: 0; width: 260px; height: 100vh;
+      background: #1e272e; color: #fff; overflow-y: auto; z-index: 100;
+      transition: transform 0.3s ease; padding: 20px 0;
+    }
+    .sidebar-header {
+      padding: 12px 20px 20px; border-bottom: 1px solid #485460;
+      margin-bottom: 8px;
+    }
+    .sidebar-header h1 {
+      font-size: 1.2rem; font-weight: 700; color: #ffd32a;
+      letter-spacing: 0.5px;
+    }
+    .sidebar-header .subtitle { font-size: 0.78rem; color: #808e9b; margin-top: 4px; }
+    .sidebar nav ul { list-style: none; }
+    .sidebar nav ul li a {
+      display: block; padding: 10px 24px; color: #d2dae2; text-decoration: none;
+      font-size: 0.92rem; border-left: 3px solid transparent;
+      transition: all 0.2s ease;
+    }
+    .sidebar nav ul li a:hover { background: #2d3a42; color: #ffd32a; border-left-color: #ffd32a; }
+    .sidebar nav ul li a.active { background: #2d3a42; color: #ffd32a; border-left-color: #ffd32a; font-weight: 600; }
+
+    /* ========== Hamburger Menu Button ========== */
+    .menu-btn {
+      display: none; position: fixed; top: 12px; left: 12px; z-index: 200;
+      width: 40px; height: 40px; border: none; background: #1e272e;
+      color: #ffd32a; font-size: 1.5rem; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
+    .menu-btn:active { background: #2d3a42; }
+
+    /* Overlay for mobile */
+    .overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 99;
+    }
+    .overlay.show { display: block; }
+
+    /* ========== Main Content Area ========== */
+    .main {
+      margin-left: 260px; margin-right: 220px; flex: 1; padding: 24px 32px 60px;
+      max-width: 800px; width: 100%;
+    }
+    .chapter { display: none; }
+    .chapter.active { display: block; }
+    .chapter-title {
+      font-size: 1.6rem; color: #1e272e; margin-bottom: 20px;
+      padding-bottom: 10px; border-bottom: 2px solid #ffd32a;
+    }
+
+    /* ========== Content Typography ========== */
+    h2 { font-size: 1.25rem; color: #2d3436; margin: 28px 0 12px; }
+    h3 { font-size: 1.1rem; color: #636e72; margin: 22px 0 10px; }
+    h4 { font-size: 1rem; color: #636e72; margin: 16px 0 8px; font-weight: 600; }
+    p  { margin: 6px 0; }
+    strong { color: #e17055; font-weight: 600; }
+    code {
+      background: #dfe6e9; color: #2d3436; padding: 2px 6px;
+      border-radius: 3px; font-size: 0.9em; font-family: "SF Mono", "Fira Code", "Consolas", monospace;
+    }
+
+    /* ========== Images ========== */
+    .img-container {
+      margin: 14px 0; text-align: center;
+    }
+    .img-container img {
+      max-width: 100%; height: auto; border-radius: 6px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      cursor: pointer; transition: transform 0.2s;
+    }
+    .img-container img:hover { transform: scale(1.01); }
+
+    /* ========== Lightbox ========== */
+    .lightbox {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.88); justify-content: center;
+      align-items: center; flex-direction: column;
+    }
+    .lightbox.show { display: flex; }
+    .lightbox img { max-width: 94vw; max-height: 90vh; border-radius: 4px; }
+    .lightbox-close {
+      position: absolute; top: 16px; right: 24px; font-size: 2rem;
+      color: #fff; background: none; border: none; cursor: pointer;
+    }
+    .lightbox-caption {
+      color: #ccc; margin-top: 10px; font-size: 0.85rem;
+    }
+
+    /* ========== Scroll to top ========== */
+    .scroll-top {
+      position: fixed; bottom: 24px; right: 28px; width: 40px; height: 40px;
+      background: #1e272e; color: #ffd32a; border: none; border-radius: 50%;
+      font-size: 1.2rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      display: none; z-index: 50;
+    }
+    .scroll-top.show { display: flex; align-items: center; justify-content: center; }
+
+    /* ========== TOC Sidebar (Right) ========== */
+    .toc-sidebar {
+      position: fixed; top: 0; right: 0; width: 210px; height: 100vh;
+      overflow-y: auto; z-index: 90; padding: 20px 14px 20px 6px;
+      background: transparent; font-size: 0.82rem; line-height: 1.5;
+    }
+    .toc-sidebar h3 {
+      font-size: 0.85rem; color: #636e72; margin-bottom: 10px;
+      padding-left: 8px; font-weight: 600; letter-spacing: 0.5px;
+    }
+    .toc-sidebar ul {
+      list-style: none; border-left: 2px solid #dfe6e9;
+    }
+    .toc-sidebar ul li a {
+      display: block; padding: 4px 12px; color: #636e72;
+      text-decoration: none; border-left: 2px solid transparent;
+      margin-left: -2px; transition: all 0.15s ease;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .toc-sidebar ul li a:hover { color: #1e272e; border-left-color: #ffd32a; }
+    .toc-sidebar ul li a.toc-active {
+      color: #1e272e; font-weight: 600; border-left-color: #ffd32a;
+      background: rgba(255,211,42,0.08);
+    }
+    .toc-sidebar ul li a.toc-h2 { padding-left: 12px; }
+    .toc-sidebar ul li a.toc-h3 { padding-left: 24px; font-size: 0.78rem; }
+    .toc-sidebar ul li a.toc-h4 { padding-left: 36px; font-size: 0.75rem; color: #999; }
+
+    /* ========== TOC Toggle Button (Tablet & Mobile) ========== */
+    .toc-btn {
+      display: none; position: fixed; top: 12px; right: 12px; z-index: 200;
+      width: 40px; height: 40px; border: none; background: #1e272e;
+      color: #ffd32a; font-size: 1.15rem; border-radius: 8px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+      align-items: center; justify-content: center;
+    }
+    .toc-btn:active { background: #2d3a42; }
+
+    /* ========== Responsive: Tablet & Mobile ========== */
+    @media (max-width: 1024px) {
+      .toc-btn { display: flex; }
+      .toc-sidebar {
+        position: fixed; top: 0; right: 0; width: 260px; height: 100vh;
+        background: #fff; z-index: 150;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        padding: 20px 16px; box-shadow: -2px 0 12px rgba(0,0,0,0.12);
+      }
+      .toc-sidebar.open { transform: translateX(0); }
+      .main { margin-right: 0; }
+    }
+    @media (max-width: 768px) {
+      .sidebar {
+        transform: translateX(-100%);
+      }
+      .sidebar.open {
+        transform: translateX(0);
+      }
+      .menu-btn { display: flex; align-items: center; justify-content: center; }
+      .main { margin-left: 0; padding: 60px 16px 40px; }
+      .chapter-title { font-size: 1.3rem; }
+      .toc-btn { top: 12px; right: 12px; }
+      .scroll-top { bottom: 16px; right: 14px; }
+    }
+
+    /* ========== Print ========== */
+    @media print {
+      .sidebar, .menu-btn, .overlay, .scroll-top, .lightbox, .toc-sidebar { display: none !important; }
+      .main { margin-left: 0; }
+      .chapter { display: block !important; page-break-after: always; }
+      .img-container img { max-width: 100%; box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Mobile menu button -->
+  <button class="menu-btn" id="menuBtn" aria-label="菜单">&#9776;</button>
+  <!-- Mobile TOC button -->
+  <button class="toc-btn" id="tocBtn" aria-label="目录">&#8801;</button>
+  <!-- Mobile overlay -->
+  <div class="overlay" id="overlay"></div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <h1>📘 数据库知识速查</h1>
+      <div class="subtitle">Database Quick Review Notes</div>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="#chapter1" class="nav-link" data-chapter="chapter1">课时1：绪论</a></li><li><a href="#chapter2" class="nav-link" data-chapter="chapter2">课时2：关系数据库</a></li><li><a href="#chapter3" class="nav-link" data-chapter="chapter3">课时3：SQL</a></li><li><a href="#chapter4" class="nav-link" data-chapter="chapter4">课时4：数据库安全性</a></li><li><a href="#chapter5" class="nav-link" data-chapter="chapter5">课时5：数据库完整性</a></li><li><a href="#chapter6" class="nav-link" data-chapter="chapter6">课时6：关系数据库理论</a></li><li><a href="#chapter7" class="nav-link" data-chapter="chapter7">课时7：数据库设计概述</a></li><li><a href="#chapter8" class="nav-link" data-chapter="chapter8">课时8：数据库恢复技术</a></li><li><a href="#chapter9" class="nav-link" data-chapter="chapter9">课时9：并发控制</a></li>
+      </ul>
+    </nav>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main" id="mainContent">
+    
+        <section id="chapter1" class="chapter">
+          <h2 class="chapter-title">课时1：绪论</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260628081241.png" alt="Pasted image 20260628081241.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628081350.png" alt="Pasted image 20260628081350.png" loading="lazy" /></div>
+<h2 id="c1-1-3f1a54">数据库系统概念</h2>
+<h3 id="c1-2-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082352.png" alt="Pasted image 20260628082352.png" loading="lazy" /></div>
+<h3 id="c1-3-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082426.png" alt="Pasted image 20260628082426.png" loading="lazy" /></div>
+<h2 id="c1-4-cb17b4">数据模型</h2>
+<h3 id="c1-5-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082517.png" alt="Pasted image 20260628082517.png" loading="lazy" /></div>
+<h3 id="c1-6-fddff9">概念模型：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082705.png" alt="Pasted image 20260628082705.png" loading="lazy" /></div>
+<h3 id="c1-7-d4ae7d">数据模型的组成要素：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082802.png" alt="Pasted image 20260628082802.png" loading="lazy" /></div>
+<h3 id="c1-8-31bdd8">常用的数据模型：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628082832.png" alt="Pasted image 20260628082832.png" loading="lazy" /></div>
+<h3 id="c1-9-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628083020.png" alt="Pasted image 20260628083020.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628083104.png" alt="Pasted image 20260628083104.png" loading="lazy" /></div>
+<h2 id="c1-10-5ac9d9">数据库系统结构</h2>
+<h3 id="c1-11-6149fb">模式的概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628083218.png" alt="Pasted image 20260628083218.png" loading="lazy" /></div>
+<h3 id="c1-12-fb8976">二级映像：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628083353.png" alt="Pasted image 20260628083353.png" loading="lazy" /></div>
+<h3 id="c1-13-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628083501.png" alt="Pasted image 20260628083501.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628083532.png" alt="Pasted image 20260628083532.png" loading="lazy" /></div>
+<h2 id="c1-14-25f9c7">总结</h2>
+<div class="img-container"><img src="Images/Pasted image 20260628083551.png" alt="Pasted image 20260628083551.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter2" class="chapter">
+          <h2 class="chapter-title">课时2：关系数据库</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260628083849.png" alt="Pasted image 20260628083849.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628083916.png" alt="Pasted image 20260628083916.png" loading="lazy" /></div>
+<h3 id="c2-1-29f3d3">并运算：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628084002.png" alt="Pasted image 20260628084002.png" loading="lazy" /></div>
+<h3 id="c2-2-23f078">差运算：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628084132.png" alt="Pasted image 20260628084132.png" loading="lazy" /></div>
+<h3 id="c2-3-b75109">交运算：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628084225.png" alt="Pasted image 20260628084225.png" loading="lazy" /></div>
+<h3 id="c2-4-7a9a2e">笛卡尔积：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628091059.png" alt="Pasted image 20260628091059.png" loading="lazy" /></div>
+<h3 id="c2-5-15a372">选择、投影、连接、除：</h3>
+<h4 id="c2-6-2949f5">背景：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260628091113.png" alt="Pasted image 20260628091113.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091129.png" alt="Pasted image 20260628091129.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091145.png" alt="Pasted image 20260628091145.png" loading="lazy" /></div>
+<h4 id="c2-7-3bb78c">选择：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260628091347.png" alt="Pasted image 20260628091347.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091446.png" alt="Pasted image 20260628091446.png" loading="lazy" /></div>
+<h4 id="c2-8-7ed42d">投影：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260628091544.png" alt="Pasted image 20260628091544.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091603.png" alt="Pasted image 20260628091603.png" loading="lazy" /></div>
+<h4 id="c2-9-dd3eca">连接：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260628091743.png" alt="Pasted image 20260628091743.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091941.png" alt="Pasted image 20260628091941.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628091954.png" alt="Pasted image 20260628091954.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> 该图结果露画 <code>a1, b2, 6, b2, 2</code> 这一行。
+</p>
+<div class="img-container"><img src="Images/Pasted image 20260628092040.png" alt="Pasted image 20260628092040.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> 该连接方式和等值连接的区别是可以去除重复的列。
+</p>
+<h3 id="c2-10-fe307f">外连接：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628092832.png" alt="Pasted image 20260628092832.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> 外连接的结果会去掉重复的属性列。
+</p>
+<div class="img-container"><img src="Images/Pasted image 20260628093157.png" alt="Pasted image 20260628093157.png" loading="lazy" /></div>
+<h3 id="c2-11-b0ba97">除运算：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628093354.png" alt="Pasted image 20260628093354.png" loading="lazy" /></div>
+<p>
+<strong>思路：</strong> 在二者重复列中找到属性都能对应的行，然后删除重复列。
+</p>
+<h3 id="c2-12-8c9d50">总结：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628093602.png" alt="Pasted image 20260628093602.png" loading="lazy" /></div>
+<h3 id="c2-13-73a504">习题：</h3>
+<p>
+表参考 #背景
+</p>
+<div class="img-container"><img src="Images/Pasted image 20260628093822.png" alt="Pasted image 20260628093822.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628093838.png" alt="Pasted image 20260628093838.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628093853.png" alt="Pasted image 20260628093853.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628094041.png" alt="Pasted image 20260628094041.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter3" class="chapter">
+          <h2 class="chapter-title">课时3：SQL</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260628094343.png" alt="Pasted image 20260628094343.png" loading="lazy" /></div>
+<h2 id="c3-1-2d2f9a">表的创建修改与删除</h2>
+<h3 id="c3-2-0f068e">数据类型：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628100051.png" alt="Pasted image 20260628100051.png" loading="lazy" /></div>
+<h3 id="c3-3-d3e072">创建表：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628100541.png" alt="Pasted image 20260628100541.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628100749.png" alt="Pasted image 20260628100749.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628100908.png" alt="Pasted image 20260628100908.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> 最后一列可以不加 <code>,</code>
+</p>
+<h3 id="c3-4-41d4f1">修改表：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628101155.png" alt="Pasted image 20260628101155.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628103802.png" alt="Pasted image 20260628103802.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628103916.png" alt="Pasted image 20260628103916.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628104438.png" alt="Pasted image 20260628104438.png" loading="lazy" /></div>
+<h2 id="c3-5-090e1f">数据的插入修改删除</h2>
+<h3 id="c3-6-696f8b">添加数据：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628104513.png" alt="Pasted image 20260628104513.png" loading="lazy" /></div>
+<h3 id="c3-7-c1d4c4">修改数据</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628104723.png" alt="Pasted image 20260628104723.png" loading="lazy" /></div>
+<h3 id="c3-8-821011">删除数据：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628104804.png" alt="Pasted image 20260628104804.png" loading="lazy" /></div>
+<h2 id="c3-9-b271e4">索引</h2>
+<h3 id="c3-10-c8f6bb">创建索引：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628104844.png" alt="Pasted image 20260628104844.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628105058.png" alt="Pasted image 20260628105058.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628105146.png" alt="Pasted image 20260628105146.png" loading="lazy" /></div>
+<h3 id="c3-11-9cb622">删除索引：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628105356.png" alt="Pasted image 20260628105356.png" loading="lazy" /></div>
+<h2 id="c3-12-c71539">数据的查询</h2>
+<h3 id="c3-13-23e31b">查询模板：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628105505.png" alt="Pasted image 20260628105505.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628105537.png" alt="Pasted image 20260628105537.png" loading="lazy" /></div>
+<h3 id="c3-14-3f5e82">查询条件：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628105555.png" alt="Pasted image 20260628105555.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> <code>!=</code> 和 <code><></code> 一样都表示不等于。
+</p>
+<h3 id="c3-15-283d89">条件查询例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628105721.png" alt="Pasted image 20260628105721.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628105742.png" alt="Pasted image 20260628105742.png" loading="lazy" /></div>
+<h3 id="c3-16-95f5f0">字符匹配与空值查询：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628105846.png" alt="Pasted image 20260628105846.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628110002.png" alt="Pasted image 20260628110002.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628110152.png" alt="Pasted image 20260628110152.png" loading="lazy" /></div>
+<h3 id="c3-17-2a3848">多重条件查询与ORDER BY：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628110223.png" alt="Pasted image 20260628110223.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628110252.png" alt="Pasted image 20260628110252.png" loading="lazy" /></div>
+<h3 id="c3-18-3ac24c">聚集函数与GROUP BY：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628110358.png" alt="Pasted image 20260628110358.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628110538.png" alt="Pasted image 20260628110538.png" loading="lazy" /></div>
+<h3 id="c3-19-8bdccf">多表连接与嵌套查询：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628110633.png" alt="Pasted image 20260628110633.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628110828.png" alt="Pasted image 20260628110828.png" loading="lazy" /></div>
+<h3 id="c3-20-2e7cf7">集合运算：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628111023.png" alt="Pasted image 20260628111023.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111142.png" alt="Pasted image 20260628111142.png" loading="lazy" /></div>
+<h2 id="c3-21-25f9c7">总结</h2>
+<div class="img-container"><img src="Images/Pasted image 20260628111229.png" alt="Pasted image 20260628111229.png" loading="lazy" /></div>
+<h2 id="c3-22-16eef0">习题</h2>
+<div class="img-container"><img src="Images/Pasted image 20260628111320.png" alt="Pasted image 20260628111320.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111430.png" alt="Pasted image 20260628111430.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111442.png" alt="Pasted image 20260628111442.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111449.png" alt="Pasted image 20260628111449.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111702.png" alt="Pasted image 20260628111702.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111712.png" alt="Pasted image 20260628111712.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111731.png" alt="Pasted image 20260628111731.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111757.png" alt="Pasted image 20260628111757.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111810.png" alt="Pasted image 20260628111810.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628111826.png" alt="Pasted image 20260628111826.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628114342.png" alt="Pasted image 20260628114342.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter4" class="chapter">
+          <h2 class="chapter-title">课时4：数据库安全性</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260628114420.png" alt="Pasted image 20260628114420.png" loading="lazy" /></div>
+<h3 id="c4-1-c27d86">授予权限</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628114451.png" alt="Pasted image 20260628114451.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628133907.png" alt="Pasted image 20260628133907.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628134007.png" alt="Pasted image 20260628134007.png" loading="lazy" /></div>
+<h3 id="c4-2-08aa92">收回权限</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628134231.png" alt="Pasted image 20260628134231.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628135148.png" alt="Pasted image 20260628135148.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628141556.png" alt="Pasted image 20260628141556.png" loading="lazy" /></div>
+<h3 id="c4-3-25f9c7">总结</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628141800.png" alt="Pasted image 20260628141800.png" loading="lazy" /></div>
+<h2 id="c4-4-16eef0">习题</h2>
+<div class="img-container"><img src="Images/Pasted image 20260628141916.png" alt="Pasted image 20260628141916.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628141932.png" alt="Pasted image 20260628141932.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628141935.png" alt="Pasted image 20260628141935.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628142636.png" alt="Pasted image 20260628142636.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter5" class="chapter">
+          <h2 class="chapter-title">课时5：数据库完整性</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260628142722.png" alt="Pasted image 20260628142722.png" loading="lazy" /></div>
+<h2 id="c5-1-05171d">三个完整性</h2>
+<h3 id="c5-2-205589">实体完整性：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628182423.png" alt="Pasted image 20260628182423.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628192452.png" alt="Pasted image 20260628192452.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628192602.png" alt="Pasted image 20260628192602.png" loading="lazy" /></div>
+<h3 id="c5-3-0a1f46">参照完整性：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628192619.png" alt="Pasted image 20260628192619.png" loading="lazy" /></div>
+<p>
+<strong>注意：</strong> 从表的外键中不能出现主表中没有的值。
+</p>
+<div class="img-container"><img src="Images/Pasted image 20260628192735.png" alt="Pasted image 20260628192735.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628192857.png" alt="Pasted image 20260628192857.png" loading="lazy" /></div>
+<h3 id="c5-4-67086f">用户定义完整性：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628192948.png" alt="Pasted image 20260628192948.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628200716.png" alt="Pasted image 20260628200716.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628200810.png" alt="Pasted image 20260628200810.png" loading="lazy" /></div>
+<h2 id="c5-5-469672">触发器</h2>
+<h3 id="c5-6-92df1d">创建触发器：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628200832.png" alt="Pasted image 20260628200832.png" loading="lazy" /></div>
+<h3 id="c5-7-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260628201354.png" alt="Pasted image 20260628201354.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260628205050.png" alt="Pasted image 20260628205050.png" loading="lazy" /></div>
+<h2 id="c5-8-a74b33">存储过程</h2>
+<h3 id="c5-9-506f91">创建存储过程：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701102643.png" alt="Pasted image 20260701102643.png" loading="lazy" /></div>
+<h3 id="c5-10-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701103437.png" alt="Pasted image 20260701103437.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701103523.png" alt="Pasted image 20260701103523.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter6" class="chapter">
+          <h2 class="chapter-title">课时6：关系数据库理论</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260701103648.png" alt="Pasted image 20260701103648.png" loading="lazy" /></div>
+<h2 id="c6-1-2ab55c">函数依赖</h2>
+<h3 id="c6-2-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701104103.png" alt="Pasted image 20260701104103.png" loading="lazy" /></div>
+<h4 id="c6-3-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701110817.png" alt="Pasted image 20260701110817.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701110904.png" alt="Pasted image 20260701110904.png" loading="lazy" /></div>
+<h3 id="c6-4-431d7c">平凡/非平凡函数依赖：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701110952.png" alt="Pasted image 20260701110952.png" loading="lazy" /></div>
+<h4 id="c6-5-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701111040.png" alt="Pasted image 20260701111040.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701111104.png" alt="Pasted image 20260701111104.png" loading="lazy" /></div>
+<h3 id="c6-6-8e99b8">完全/部分函数依赖：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701111330.png" alt="Pasted image 20260701111330.png" loading="lazy" /></div>
+<h4 id="c6-7-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701111357.png" alt="Pasted image 20260701111357.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701111434.png" alt="Pasted image 20260701111434.png" loading="lazy" /></div>
+<h3 id="c6-8-34eb4b">传递函数依赖：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701112502.png" alt="Pasted image 20260701112502.png" loading="lazy" /></div>
+<h4 id="c6-9-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701112537.png" alt="Pasted image 20260701112537.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701112724.png" alt="Pasted image 20260701112724.png" loading="lazy" /></div>
+<h3 id="c6-10-e9d839">多值依赖：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701113013.png" alt="Pasted image 20260701113013.png" loading="lazy" /></div>
+<h4 id="c6-11-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701113730.png" alt="Pasted image 20260701113730.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701114455.png" alt="Pasted image 20260701114455.png" loading="lazy" /></div>
+<h2 id="c6-12-2fbf8c">码</h2>
+<h3 id="c6-13-2f951e">候选码、主码和外码：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701115011.png" alt="Pasted image 20260701115011.png" loading="lazy" /></div>
+<h3 id="c6-14-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701115019.png" alt="Pasted image 20260701115019.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701115031.png" alt="Pasted image 20260701115031.png" loading="lazy" /></div>
+<h2 id="c6-15-23393b">范式</h2>
+<h3 id="c6-16-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701115100.png" alt="Pasted image 20260701115100.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701162520.png" alt="Pasted image 20260701162520.png" loading="lazy" /></div>
+<h3 id="c6-17-c4f2e9">第一范式（1NF）：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701115212.png" alt="Pasted image 20260701115212.png" loading="lazy" /></div>
+<h3 id="c6-18-9dbc3c">第二范式（2NF）：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701115413.png" alt="Pasted image 20260701115413.png" loading="lazy" /></div>
+<h4 id="c6-19-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701115507.png" alt="Pasted image 20260701115507.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701115624.png" alt="Pasted image 20260701115624.png" loading="lazy" /></div>
+<h3 id="c6-20-586eac">第三范式（3NF）：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701152528.png" alt="Pasted image 20260701152528.png" loading="lazy" /></div>
+<h4 id="c6-21-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701152848.png" alt="Pasted image 20260701152848.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701152933.png" alt="Pasted image 20260701152933.png" loading="lazy" /></div>
+<h3 id="c6-22-04ed19">BC范式：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701153102.png" alt="Pasted image 20260701153102.png" loading="lazy" /></div>
+<h4 id="c6-23-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701155612.png" alt="Pasted image 20260701155612.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701155910.png" alt="Pasted image 20260701155910.png" loading="lazy" /></div>
+<h3 id="c6-24-aa2da9">第四范式：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701160234.png" alt="Pasted image 20260701160234.png" loading="lazy" /></div>
+<h4 id="c6-25-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701160616.png" alt="Pasted image 20260701160616.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701160711.png" alt="Pasted image 20260701160711.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701162458.png" alt="Pasted image 20260701162458.png" loading="lazy" /></div>
+<h2 id="c6-26-808901">数据依赖的公理系统</h2>
+<h3 id="c6-27-cf4a09">Armstrong公理系统：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701162556.png" alt="Pasted image 20260701162556.png" loading="lazy" /></div>
+<h3 id="c6-28-104cb9">函数依赖的闭包F+及属性的闭包XF+：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701162700.png" alt="Pasted image 20260701162700.png" loading="lazy" /></div>
+<h3 id="c6-29-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701162855.png" alt="Pasted image 20260701162855.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701162935.png" alt="Pasted image 20260701162935.png" loading="lazy" /></div>
+<h2 id="c6-30-73a504">习题：</h2>
+<div class="img-container"><img src="Images/Pasted image 20260701163328.png" alt="Pasted image 20260701163328.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702093914.png" alt="Pasted image 20260702093914.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702093931.png" alt="Pasted image 20260702093931.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702094012.png" alt="Pasted image 20260702094012.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701163339.png" alt="Pasted image 20260701163339.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702095016.png" alt="Pasted image 20260702095016.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702095148.png" alt="Pasted image 20260702095148.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter7" class="chapter">
+          <h2 class="chapter-title">课时7：数据库设计概述</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260701163415.png" alt="Pasted image 20260701163415.png" loading="lazy" /></div>
+<h3 id="c7-1-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701163441.png" alt="Pasted image 20260701163441.png" loading="lazy" /></div>
+<h3 id="c7-2-dfdc9c">需求分析：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701163534.png" alt="Pasted image 20260701163534.png" loading="lazy" /></div>
+<h4 id="c7-3-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701164150.png" alt="Pasted image 20260701164150.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701164220.png" alt="Pasted image 20260701164220.png" loading="lazy" /></div>
+<h3 id="c7-4-4edadd">概念结构设计：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701164328.png" alt="Pasted image 20260701164328.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701164523.png" alt="Pasted image 20260701164523.png" loading="lazy" /></div>
+<h4 id="c7-5-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260701171539.png" alt="Pasted image 20260701171539.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701171610.png" alt="Pasted image 20260701171610.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701171645.png" alt="Pasted image 20260701171645.png" loading="lazy" /></div>
+<h3 id="c7-6-f953d8">逻辑结构设计：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701171817.png" alt="Pasted image 20260701171817.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701171920.png" alt="Pasted image 20260701171920.png" loading="lazy" /></div>
+<h3 id="c7-7-51e574">物理结构设计：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701172721.png" alt="Pasted image 20260701172721.png" loading="lazy" /></div>
+<h3 id="c7-8-480222">数据库的实施和维护：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701172737.png" alt="Pasted image 20260701172737.png" loading="lazy" /></div>
+<h3 id="c7-9-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701172833.png" alt="Pasted image 20260701172833.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701172851.png" alt="Pasted image 20260701172851.png" loading="lazy" /></div>
+<h3 id="c7-10-73a504">习题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701172917.png" alt="Pasted image 20260701172917.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702095323.png" alt="Pasted image 20260702095323.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter8" class="chapter">
+          <h2 class="chapter-title">课时8：数据库恢复技术</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260701173000.png" alt="Pasted image 20260701173000.png" loading="lazy" /></div>
+<h2 id="c8-1-9f8240">事务</h2>
+<h3 id="c8-2-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701202854.png" alt="Pasted image 20260701202854.png" loading="lazy" /></div>
+<h3 id="c8-3-ee17d3">举例：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701203141.png" alt="Pasted image 20260701203141.png" loading="lazy" /></div>
+<h3 id="c8-4-6d6849">事务的特性：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701203155.png" alt="Pasted image 20260701203155.png" loading="lazy" /></div>
+<h3 id="c8-5-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701203335.png" alt="Pasted image 20260701203335.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701203416.png" alt="Pasted image 20260701203416.png" loading="lazy" /></div>
+<h2 id="c8-6-631525">数据库系统故障的种类</h2>
+<h3 id="c8-7-4fe775">种类：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701203521.png" alt="Pasted image 20260701203521.png" loading="lazy" /></div>
+<h3 id="c8-8-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701204157.png" alt="Pasted image 20260701204157.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701204238.png" alt="Pasted image 20260701204238.png" loading="lazy" /></div>
+<h2 id="c8-9-62d8f8">数据库备份</h2>
+<h3 id="c8-10-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701204255.png" alt="Pasted image 20260701204255.png" loading="lazy" /></div>
+<h3 id="c8-11-77e501">日志文件：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701204403.png" alt="Pasted image 20260701204403.png" loading="lazy" /></div>
+<h3 id="c8-12-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701204553.png" alt="Pasted image 20260701204553.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701204646.png" alt="Pasted image 20260701204646.png" loading="lazy" /></div>
+<h2 id="c8-13-284524">数据库恢复</h2>
+<h3 id="c8-14-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701204706.png" alt="Pasted image 20260701204706.png" loading="lazy" /></div>
+<h3 id="c8-15-7fdb82">故障恢复策略：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701210220.png" alt="Pasted image 20260701210220.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701210812.png" alt="Pasted image 20260701210812.png" loading="lazy" /></div>
+<h3 id="c8-16-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701210936.png" alt="Pasted image 20260701210936.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701211002.png" alt="Pasted image 20260701211002.png" loading="lazy" /></div>
+<h2 id="c8-17-16eef0">习题</h2>
+<div class="img-container"><img src="Images/Pasted image 20260701211034.png" alt="Pasted image 20260701211034.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701211449.png" alt="Pasted image 20260701211449.png" loading="lazy" /></div>
+        </section>
+        
+        <section id="chapter9" class="chapter">
+          <h2 class="chapter-title">课时9：并发控制</h2>
+          <div class="img-container"><img src="Images/Pasted image 20260701211519.png" alt="Pasted image 20260701211519.png" loading="lazy" /></div>
+<h2 id="c9-1-408ee9">事务调度</h2>
+<h3 id="c9-2-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701211635.png" alt="Pasted image 20260701211635.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701211728.png" alt="Pasted image 20260701211728.png" loading="lazy" /></div>
+<h3 id="c9-3-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701212143.png" alt="Pasted image 20260701212143.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701212221.png" alt="Pasted image 20260701212221.png" loading="lazy" /></div>
+<h2 id="c9-4-79d7e2">并发操作的问题</h2>
+<h3 id="c9-5-d30326">问题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701212243.png" alt="Pasted image 20260701212243.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701222230.png" alt="Pasted image 20260701222230.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701222258.png" alt="Pasted image 20260701222258.png" loading="lazy" /></div>
+<h3 id="c9-6-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701223438.png" alt="Pasted image 20260701223438.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260701223819.png" alt="Pasted image 20260701223819.png" loading="lazy" /></div>
+<h2 id="c9-7-a9b162">并发调度的可串行性</h2>
+<h3 id="c9-8-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260701223839.png" alt="Pasted image 20260701223839.png" loading="lazy" /></div>
+<h2 id="c9-9-521220">并发控制技术</h2>
+<h3 id="c9-10-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260702090935.png" alt="Pasted image 20260702090935.png" loading="lazy" /></div>
+<h4 id="c9-11-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260702092058.png" alt="Pasted image 20260702092058.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702092201.png" alt="Pasted image 20260702092201.png" loading="lazy" /></div>
+<h3 id="c9-12-baf8b2">封锁协议：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260702092406.png" alt="Pasted image 20260702092406.png" loading="lazy" /></div>
+<h4 id="c9-13-7ca4fd">例题：</h4>
+<div class="img-container"><img src="Images/Pasted image 20260702092529.png" alt="Pasted image 20260702092529.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702092645.png" alt="Pasted image 20260702092645.png" loading="lazy" /></div>
+<h2 id="c9-14-031331">两段锁协议</h2>
+<h3 id="c9-15-a46d56">概念：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260702092658.png" alt="Pasted image 20260702092658.png" loading="lazy" /></div>
+<h3 id="c9-16-7ca4fd">例题：</h3>
+<div class="img-container"><img src="Images/Pasted image 20260702092917.png" alt="Pasted image 20260702092917.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702092958.png" alt="Pasted image 20260702092958.png" loading="lazy" /></div>
+<h2 id="c9-17-16eef0">习题</h2>
+<div class="img-container"><img src="Images/Pasted image 20260702093019.png" alt="Pasted image 20260702093019.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702093355.png" alt="Pasted image 20260702093355.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702093029.png" alt="Pasted image 20260702093029.png" loading="lazy" /></div>
+<div class="img-container"><img src="Images/Pasted image 20260702093527.png" alt="Pasted image 20260702093527.png" loading="lazy" /></div>
+        </section>
+        
+  </main>
+
+  <!-- TOC Sidebar (Right) -->
+  <aside class="toc-sidebar" id="tocSidebar">
+    <h3>📑 本节目录</h3>
+    <nav><ul id="tocList"></ul></nav>
+  </aside>
+
+  <!-- Lightbox -->
+  <div class="lightbox" id="lightbox">
+    <button class="lightbox-close" id="lightboxClose">&times;</button>
+    <img id="lightboxImg" src="" alt="" />
+    <div class="lightbox-caption" id="lightboxCaption"></div>
+  </div>
+
+  <!-- Scroll to top -->
+  <button class="scroll-top" id="scrollTop" title="回到顶部">&#8679;</button>
+
+  <script>
+    (function() {
+      // ========== Elements ==========
+      const sidebar = document.getElementById('sidebar');
+      const menuBtn = document.getElementById('menuBtn');
+      const tocBtn = document.getElementById('tocBtn');
+      const overlay = document.getElementById('overlay');
+      const navLinks = document.querySelectorAll('.nav-link');
+      const chapters = document.querySelectorAll('.chapter');
+      const scrollTopBtn = document.getElementById('scrollTop');
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightboxImg');
+      const lightboxCaption = document.getElementById('lightboxCaption');
+      const lightboxClose = document.getElementById('lightboxClose');
+      const mainContent = document.getElementById('mainContent');
+      const tocList = document.getElementById('tocList');
+      const tocSidebar = document.getElementById('tocSidebar');
+
+      let currentChapterId = null;
+      let headingElements = [];
+      let tocLinks = [];
+
+      // ========== Build TOC from active chapter's headings ==========
+      function buildTOC(chapterEl) {
+        tocList.innerHTML = '';
+        headingElements = [];
+        tocLinks = [];
+        if (!chapterEl) return;
+
+        const headings = chapterEl.querySelectorAll('h2[id], h3[id], h4[id]');
+        headings.forEach(h => {
+          const tag = h.tagName.toLowerCase();
+          const level = 'toc-' + tag;
+          const text = h.textContent.trim();
+          if (!text) return;
+
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          a.href = '#' + h.id;
+          a.textContent = text;
+          a.className = 'toc-item ' + level;
+          a.setAttribute('data-target', h.id);
+          a.addEventListener('click', function(e) {
+            e.preventDefault();
+            const target = document.getElementById(this.getAttribute('data-target'));
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              history.pushState(null, null, '#' + currentChapterId);
+            }
+            // close TOC sidebar on mobile after click
+            if (window.innerWidth <= 1024) closeTocSidebar();
+          });
+          li.appendChild(a);
+          tocList.appendChild(li);
+
+          headingElements.push(h);
+          tocLinks.push(a);
+        });
+      }
+
+      // ========== Scroll spy: highlight active TOC item ==========
+      function getScrollTop() {
+        return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+      }
+      function updateActiveTocLink() {
+        if (headingElements.length === 0) return;
+        let activeIdx = 0;
+        const scrollTop = getScrollTop() + 100;
+
+        for (let i = headingElements.length - 1; i >= 0; i--) {
+          if (headingElements[i].offsetTop <= scrollTop) {
+            activeIdx = i;
+            break;
+          }
+        }
+
+        tocLinks.forEach((link, i) => {
+          link.classList.toggle('toc-active', i === activeIdx);
+        });
+      }
+
+      // ========== Helper: activate chapter ==========
+      function activateChapter(chapterId) {
+        chapters.forEach(c => c.classList.remove('active'));
+        navLinks.forEach(l => l.classList.remove('active'));
+        const target = document.getElementById(chapterId);
+        if (target) {
+          target.classList.add('active');
+          currentChapterId = chapterId;
+          buildTOC(target);
+        }
+        const link = document.querySelector(`[data-chapter="${chapterId}"]`);
+        if (link) link.classList.add('active');
+        // close sidebar on mobile
+        if (window.innerWidth <= 768) closeSidebar();
+        // scroll to top (need to wait for DOM update)
+        requestAnimationFrame(() => {
+          document.scrollingElement.scrollTo({ top: 0, behavior: 'instant' });
+          updateActiveTocLink();
+        });
+      }
+
+      // ========== Sidebar toggle (mobile) ==========
+      function openSidebar() {
+        sidebar.classList.add('open');
+        overlay.classList.add('show');
+        tocSidebar.classList.remove('open');  // close TOC if open
+      }
+      function closeSidebar() {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+      menuBtn.addEventListener('click', () => {
+        sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+      });
+
+      // ========== TOC toggle (mobile) ==========
+      function openTocSidebar() {
+        tocSidebar.classList.add('open');
+        overlay.classList.add('show');
+        sidebar.classList.remove('open');  // close nav if open
+      }
+      function closeTocSidebar() {
+        tocSidebar.classList.remove('open');
+        overlay.classList.remove('show');
+      }
+      tocBtn.addEventListener('click', () => {
+        tocSidebar.classList.contains('open') ? closeTocSidebar() : openTocSidebar();
+      });
+      overlay.addEventListener('click', () => {
+        closeSidebar();
+        closeTocSidebar();
+      });
+
+      // ========== Nav click ==========
+      navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          const chapterId = this.getAttribute('data-chapter');
+          activateChapter(chapterId);
+          history.pushState(null, null, '#' + chapterId);
+        });
+      });
+
+      // ========== Image click → lightbox ==========
+      mainContent.addEventListener('click', function(e) {
+        if (e.target.tagName === 'IMG') {
+          lightboxImg.src = e.target.src;
+          lightboxCaption.textContent = e.target.alt || '';
+          lightbox.classList.add('show');
+          document.body.style.overflow = 'hidden';
+        }
+      });
+      lightboxClose.addEventListener('click', () => {
+        lightbox.classList.remove('show');
+        document.body.style.overflow = '';
+      });
+      lightbox.addEventListener('click', function(e) {
+        if (e.target === lightbox) {
+          lightbox.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      });
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && lightbox.classList.contains('show')) {
+          lightbox.classList.remove('show');
+          document.body.style.overflow = '';
+        }
+      });
+
+      // ========== Scroll to top ==========
+      window.addEventListener('scroll', function() {
+        scrollTopBtn.classList.toggle('show', getScrollTop() > 400);
+        updateActiveTocLink();
+      }, { passive: true });
+      scrollTopBtn.addEventListener('click', () => {
+        document.scrollingElement.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+
+      // ========== Init: load chapter from URL hash ==========
+      function init() {
+        const hash = window.location.hash.replace('#', '');
+        const validIds = Array.from(chapters).map(c => c.id);
+        if (hash && validIds.includes(hash)) {
+          activateChapter(hash);
+        } else {
+          activateChapter('chapter1');
+        }
+      }
+
+      // Handle hash change (browser back/forward)
+      window.addEventListener('hashchange', function() {
+        const hash = window.location.hash.replace('#', '');
+        const validIds = Array.from(chapters).map(c => c.id);
+        if (hash && validIds.includes(hash)) {
+          activateChapter(hash);
+        }
+      });
+
+      init();
+    })();
+  </script>
+</body>
+</html>
