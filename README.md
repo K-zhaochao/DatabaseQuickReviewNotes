@@ -128,4 +128,4 @@ docker run -d -p 8080:80 database-notes
 
 ## 📝 许可
 
-MIT License
+[GNU GENERAL PUBLIC LICENSE Version 3](./LICENSE)
